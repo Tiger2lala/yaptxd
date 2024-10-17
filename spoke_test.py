@@ -1,0 +1,16 @@
+
+
+import numpy as np
+from yaptxd.utils import sinc_pulse
+from yaptxd.spokes import SpokesForm
+
+sinc2 = sinc_pulse(256, 2)
+spokes = SpokesForm(3)
+
+spokes.set_subpulse(sinc2, 2.0)
+
+spokes.set_ksamples(np.array([[-1,0], [0,1], [1,1]])*0.0015)
+
+spokes.plot_pulse()
+
+print("")
