@@ -8,10 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from typing import Tuple
-from .utils import trapz_gradient
+from yaptxd.utils import trapz_gradient, GAMMA, SLEW
 
-GAMMA = 42.58e6  # Hz/T
-SLEW = 40 # T/m/s
 
 # TODO: good to have a parent class of Pulse
 class SpokesForm:
@@ -32,6 +30,7 @@ class SpokesForm:
         self.spoke_location = np.zeros((n_spokes, 2))
         self.rf = None
         self.g  = None
+        self.k = None
         self.subpulse_start_time = np.zeros(n_spokes)
 
 
@@ -97,10 +96,20 @@ class SpokesForm:
                 self.g[self.subpulse_start_time[i]+self.subpulse_len-1
                        :self.subpulse_start_time[i]+len(sub_gz)+1, xy] = \
                     np.concatenate((ramp, ramp[-2::-1]))
-                
+        
+        self.k_traj()
+         
     def plot_pulse(self):
         fig, ax = plt.subplots(3, 1, sharex=True)
         ax[0].plot(self.rf)
         ax[1].plot(self.g[:,2])
         ax[2].plot(self.g[:,0:2])
         plt.show()
+
+    def k_traj(self):
+        self.k = -np.cumsum(self.g[::-1,...], axis=0) \
+            * GAMMA * self.timestep
+        # T/m * Hz/T * s = m-1
+        self.k = self.k[::-1,...]
+        return self.k
+    

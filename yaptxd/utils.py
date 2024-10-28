@@ -7,6 +7,9 @@ Description: Utility functions
 import numpy as np
 from typing import Tuple
 
+GAMMA = 42.58e6  # Hz/T
+SLEW = 40 # T/m/s
+
 def sinc_pulse(nt: int, tbw: float) -> np.ndarray:
     t = np.linspace(-tbw/2, tbw/2, nt)
     pulse = np.sinc(t)
