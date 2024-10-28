@@ -7,7 +7,7 @@ Description: class for small tip calculations
 import numpy as np
 import matplotlib.pyplot as plt
 from yaptxd.spokes import SpokesForm
-from yaptxd.maps import FieldMap
+from yaptxd.maps import FieldMapFlattened
 from yaptxd.utils import GAMMA
 
 
@@ -17,11 +17,11 @@ class StaOpt:
     """
 
     def __init__(self, pulse_form: SpokesForm, 
-                 field_maps: FieldMap,
+                 field_maps: FieldMapFlattened,
                  target: float = 0.5):
         self.pulse_form = pulse_form
         self.maps = field_maps
-        self.target = target * np.ones_like(self.maps.mask) # M
+        self.target = target * np.ones_like(self.maps.b0) # M
         self.a_mat = None
         self.solution = None
 
@@ -32,7 +32,7 @@ class StaOpt:
         dt = self.pulse_form.timestep
 
         # Hz, (nT, nVoxels)
-        b0_phase_contribution = self.maps.b0[self.maps.mask][np.newaxis, ...] * \
+        b0_phase_contribution = self.maps.b0[np.newaxis, ...] * \
             dt * \
             np.linspace(self.pulse_form.k.shape[0], 0,
                         self.pulse_form.k.shape[0])[..., np.newaxis]  
@@ -41,9 +41,9 @@ class StaOpt:
         # m^-1 * m  
         g_phase_contribution = \
             np.matmul(self.pulse_form.k, 
-                      np.concatenate((self.maps.xyz_mesh[0][self.maps.mask][np.newaxis], 
-                                      self.maps.xyz_mesh[1][self.maps.mask][np.newaxis],
-                                      self.maps.xyz_mesh[2][self.maps.mask][np.newaxis]),
+                      np.concatenate((self.maps.xyz_mesh[0][np.newaxis], 
+                                      self.maps.xyz_mesh[1][np.newaxis],
+                                      self.maps.xyz_mesh[2][np.newaxis]),
                                       axis=0)) 
         
         # rad / T (nT, nVoxels)
@@ -63,7 +63,7 @@ class StaOpt:
         # (1, nCoils, nVoxels) * (nPulse, 1, nVoxels)
         # (nPulse, nCoils, nVoxels)
         # rad/V 
-        a_mat = self.maps.b1[:, self.maps.mask][np.newaxis] * \
+        a_mat = self.maps.b1[np.newaxis] * \
             a_before_coil[:, np.newaxis, :]
         # (DOF, nVoxels)
         a_mat = a_mat.reshape(-1, np.count_nonzero(self.maps.mask))  
@@ -78,10 +78,10 @@ class StaOpt:
         :param tikhonov: Tikhonov regularization
         :param niter: number of iterations
         """
-        curr_phase = np.zeros_like(self.target[self.maps.mask], dtype=complex)
+        curr_phase = np.zeros_like(self.target, dtype=complex)
         for i in range(niter):
             astack = np.vstack((self.a_mat.T, tikhonov*np.eye(self.a_mat.shape[0])))
-            bstack = np.append((self.target[self.maps.mask]*np.exp(1j*curr_phase)),
+            bstack = np.append((self.target*np.exp(1j*curr_phase)),
                                np.zeros(self.a_mat.shape[0]))
             x = np.linalg.lstsq(astack, bstack, rcond=None)
             curr_phase = np.angle(np.matmul(self.a_mat.T, x[0]))
@@ -97,8 +97,11 @@ class StaOpt:
         sta_mag = np.zeros_like(self.maps.mask, dtype=complex)
         sta_mag[self.maps.mask] = np.matmul(self.a_mat.T, self.solution)
 
+        target = np.zeros_like(self.maps.mask, dtype=complex)
+        target[self.maps.mask] = self.target
+
         fig, ax = plt.subplots(1,3)
-        im1 = ax[0].imshow(self.target, cmap='hot')
+        im1 = ax[0].imshow(np.abs(target), cmap='hot')
         im1.set_clim(0, 1)
         plt.colorbar(im1, ax=ax[0])
         ax[0].set_title('Target magnetization')

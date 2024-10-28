@@ -17,7 +17,7 @@ spokes.plot_pulse()
 
 m = FieldMap('demo-data/phantom-mat/AdjDataUser.mat')
 
-sta = StaOpt(spokes, m)
+sta = StaOpt(spokes, m.flattened())
 sta.create_A_matrix()
 sta.solve_mls()
 sta.plot_sta()
