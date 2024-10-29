@@ -17,21 +17,22 @@ class SpokesForm:
     def __init__(self, 
                  n_spokes: int,
                  subpulse: Tuple[np.ndarray, float] = None,
-                 timestep: float = 10e-6,):
+                 timestep: float = 10e-6,
+                 thickness: float = 5.0e-3):
         self.n_spokes = n_spokes
         self.timestep = timestep
-        if subpulse is not None:
-            self.set_subpulse(*subpulse)
-        else:
-            self.subpulse = None
-            self.subpulse_tbw = 2.0 
+        self.thickness = thickness  # m
         
-        self.thickness = 5.0e-3  # m
         self.spoke_location = np.zeros((n_spokes, 2))
         self.rf = None
         self.g  = None
         self.k = None
         self.subpulse_start_time = np.zeros(n_spokes)
+        if subpulse is not None:
+            self.set_subpulse(*subpulse)
+        else:
+            self.subpulse = None
+            self.subpulse_tbw = 2.0 
 
 
     def set_subpulse(self, subpulse: np.ndarray, tbw: float):

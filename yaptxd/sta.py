@@ -23,7 +23,9 @@ class StaOpt:
         self.maps = field_maps
         self.target = target * np.ones_like(self.maps.b0) # M
         self.a_mat = None
-        self.solution = None
+        self._coeff = None
+        self.cost = 0.
+        self.m_sta = None
 
     def create_A_matrix(self):
         """
@@ -78,6 +80,8 @@ class StaOpt:
         :param tikhonov: Tikhonov regularization
         :param niter: number of iterations
         """
+        if self.a_mat is None:
+            self.create_A_matrix()
         curr_phase = np.zeros_like(self.target, dtype=complex)
         for i in range(niter):
             astack = np.vstack((self.a_mat.T, tikhonov*np.eye(self.a_mat.shape[0])))
@@ -85,9 +89,27 @@ class StaOpt:
                                np.zeros(self.a_mat.shape[0]))
             x = np.linalg.lstsq(astack, bstack, rcond=None)
             curr_phase = np.angle(np.matmul(self.a_mat.T, x[0]))
-
-        self.solution = x[0]
-        return self.solution
+        
+        self.coeff = x[0]
+        self.cost = self.mls_cost(self.a_mat, x[0], self.target, tikhonov)
+        self.m_sta = np.matmul(self.a_mat.T, self.coeff)
+        return self.coeff
+    
+    @staticmethod
+    def mls_cost(a_mat: np.ndarray, b_vec: np.ndarray,
+             target: np.ndarray, 
+             tikhonov: float) -> float:
+        """
+        Arguments:
+            b_vec: np.ndarray, (DOF,)
+            a_mat: np.ndarray, (DOF, nVoxels)
+            target: np.ndarray, (nVoxels,)
+            tikhonov: float
+        """
+        sta_mag = np.matmul(a_mat.T, b_vec)
+        cost = np.linalg.norm(np.abs(sta_mag) - np.abs(target)) **2 + \
+            (tikhonov * np.linalg.norm(b_vec)) **2
+        return cost
 
 
     def plot_sta(self):
@@ -95,7 +117,7 @@ class StaOpt:
         Plotting small tip angle magnetization
         """
         sta_mag = np.zeros_like(self.maps.mask, dtype=complex)
-        sta_mag[self.maps.mask] = np.matmul(self.a_mat.T, self.solution)
+        sta_mag[self.maps.mask] = self.m_sta
 
         target = np.zeros_like(self.maps.mask, dtype=complex)
         target[self.maps.mask] = self.target
@@ -116,3 +138,12 @@ class StaOpt:
         ax[2].set_title('STA phase')
         plt.show()
         return
+    
+    @property
+    def coeff(self):
+        return self._coeff
+    @coeff.setter
+    def coeff(self, value):
+        self._coeff = value
+        if self.a_mat is not None:
+            self.m_sta = np.matmul(self.a_mat.T, self.coeff)

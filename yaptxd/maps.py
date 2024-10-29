@@ -94,6 +94,7 @@ class FieldMap:
         groups_in_band = np.array_split(np.arange(nslice_per_band), n_groups)
         self.slice_groups = []
         self.flattened_maps = []
+
         # 1st index is group, then in array: 1st is band, 2nd is slice
         for i in range(n_groups):
             this_group = []
@@ -112,7 +113,9 @@ class FieldMap:
 
     
     def flattened(self):
-        return FieldMapFlattened(self)
+        self.slice_groups = [np.array([[0]])]
+        self.flattened_maps = [FieldMapFlattened(self)]
+        return self.flattened_maps[0]
 
 
 
