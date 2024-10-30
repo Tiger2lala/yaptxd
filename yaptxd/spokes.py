@@ -74,8 +74,10 @@ class SpokesForm:
         # Gz is bipolar only for now
         total_steps = (self.subpulse_len-1) * self.n_spokes\
             + (self.n_spokes+1) * (2 * tramp)+1
+        
+        subpulse_gap = self.subpulse_len - 1 + 2 * tramp
 
-        self.subpulse_start_time = np.arange(self.n_spokes) * len(sub_gz) \
+        self.subpulse_start_time = np.arange(self.n_spokes) * subpulse_gap \
             + tramp*2
         
         self.g = np.zeros((total_steps, 3))
@@ -87,7 +89,7 @@ class SpokesForm:
             self.g[:tramp*2+1, xy] = np.concatenate((ramp, ramp[-2::-1]))
 
         for i in range(self.n_spokes):
-            self.g[self.subpulse_start_time[i]-tramp:self.subpulse_start_time[i]-tramp+len(sub_gz), 2] = \
+            self.g[self.subpulse_start_time[i]-ramp_gz:self.subpulse_start_time[i]-ramp_gz+len(sub_gz), 2] = \
                 sub_gz * (-1)**i
             self.rf[self.subpulse_start_time[i]:self.subpulse_start_time[i]+self.subpulse_len] = \
                 self.subpulse
@@ -95,7 +97,7 @@ class SpokesForm:
             for xy in range(2):
                 ramp = np.linspace(0, ramp_top[i+1, xy], tramp+1)
                 self.g[self.subpulse_start_time[i]+self.subpulse_len-1
-                       :self.subpulse_start_time[i]+len(sub_gz)+1, xy] = \
+                       :self.subpulse_start_time[i]+subpulse_gap+1, xy] = \
                     np.concatenate((ramp, ramp[-2::-1]))
         
         self.k_traj()

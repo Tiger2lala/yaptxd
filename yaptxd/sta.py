@@ -34,7 +34,7 @@ class StaOpt:
         dt = self.pulse_form.timestep
 
         # Hz, (nT, nVoxels)
-        b0_phase_contribution = self.maps.b0[np.newaxis, ...] * \
+        b0_phase_contribution = - self.maps.b0[np.newaxis, ...] * \
             dt * \
             np.linspace(self.pulse_form.k.shape[0], 0,
                         self.pulse_form.k.shape[0])[..., np.newaxis]  

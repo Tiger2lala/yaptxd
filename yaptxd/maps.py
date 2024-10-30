@@ -108,7 +108,7 @@ class FieldMap:
         """
         Calculate the meshgrid of x, y, z
         """
-        self.xyz_mesh = np.meshgrid(self.x, self.y, self.z, indexing='ij')
+        self.xyz_mesh = np.meshgrid(self.x, self.y, self.z, indexing='xy')
         self.dims = np.array([self.x.size, self.y.size, self.z.size])
 
     
@@ -150,7 +150,7 @@ class FieldMapFlattened:
 
         z = from_map.z[slices] if use_z else np.zeros_like(slices)
 
-        self.xyz_mesh = np.meshgrid(from_map.x, from_map.y, z, indexing='ij')
+        self.xyz_mesh = np.meshgrid(from_map.x, from_map.y, z, indexing='xy')
 
         # flatten
         self.b0 = self.b0[self.mask]

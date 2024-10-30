@@ -11,7 +11,7 @@ spokes = SpokesForm(3)
 
 spokes.set_subpulse(sinc2, 2.0)
 
-spokes.set_ksamples(np.array([[-1,0], [0,1], [1,1]])*0.0015)
+spokes.set_ksamples(np.array([[0,0], [1,1], [0,0]])*15)
 
 spokes.plot_pulse()
 
