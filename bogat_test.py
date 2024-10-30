@@ -10,16 +10,16 @@ spokes = SpokesForm(3)
 
 spokes.set_subpulse(sinc2, 2.0)
 
-spokes.set_ksamples(np.array([[-1,0], [0,1], [0,0]])*0.0015)
+spokes.set_ksamples(np.array([[-1,0], [0,1], [0,0]])*10)
 
-spokes.plot_pulse()
+# spokes.plot_pulse()
 
 m = FieldMap('demo-data/phantom-mat/AdjDataUser.mat')
 m.group_slices()
 
 bogat_solver = BOGAT(m, spokes)
-bogat_solver.set_rf_kwargs(tikhonov=1e-3)
-bogat_solver.optimize()
+bogat_solver.set_rf_kwargs(tikhonov=1e-2)
+bogat_solver.optimize(k_range=15, phase_adoption=False)
 
 sta = StaOpt(bogat_solver.pulse_form_best[0], m.flattened_maps[0])
 sta.create_A_matrix()

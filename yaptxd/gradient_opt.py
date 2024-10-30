@@ -41,7 +41,7 @@ class BOGAT:
 
 
     def optimize(self, n_iter: int = 30,
-                 k_range: float = 0.0015,
+                 k_range: float = 15,
                  phase_adoption: bool = False):
         """
         Optimization entry point
@@ -83,7 +83,7 @@ class BOGAT:
     def optimize_BOGAT(self, maps: List[FieldMapFlattened],
                        targets: List[np.ndarray],
                        n_iter: int = 30,
-                       k_range: float = 0.0015,
+                       k_range: float = 15,
                        phase_adoption: bool = False) \
                        -> Tuple[SpokesForm, 
                                 List[np.ndarray]]:
@@ -97,14 +97,15 @@ class BOGAT:
                                     pbounds=bounds,
                                     acquisition_function=acquisition.ExpectedImprovement(0.5),
                                     allow_duplicate_points=True)
-            form = SpokesForm(i_spoke+1, 
+            form = SpokesForm(i_spoke+2, 
                               (self.pulse_form_in.subpulse,
                                self.pulse_form_in.subpulse_tbw),
                                self.pulse_form_in.timestep)
             for _ in range(n_iter):
                 points = bo.suggest()
-                k_samples = np.vstack((existing_k_samples,
-                                      np.array([points['x'], points['y']])))
+                print(points)
+                k_samples = np.vstack((np.array([points['x'], points['y']]),
+                                       existing_k_samples))
                 form.set_ksamples(k_samples)
                 (cost, _, _) = self._objective_evaluate(form, 
                                                 maps, targets)
@@ -112,8 +113,9 @@ class BOGAT:
             
             # record best
             best = bo.max['params']
-            existing_k_samples = np.vstack((existing_k_samples,
-                                            np.array([best['x'], best['y']])))
+            print("best", best)
+            existing_k_samples = np.vstack((np.array([best['x'], best['y']]),
+                                            existing_k_samples))
             
             # phase adoption
             form.set_ksamples(existing_k_samples)
@@ -121,8 +123,8 @@ class BOGAT:
             
             if phase_adoption:
                 raise NotImplementedError("Phase adoption not working")
-            # for i in range(len(targets)): # completely destroys target, why?
-            #     targets[i] = np.abs(targets[i]) * np.exp(1j * np.angle(m_stas[i]))
+                # for i in range(len(targets)): # completely destroys results, why?
+                #     targets[i] = np.abs(targets[i]) * np.exp(1j * np.angle(m_stas[i]))
 
         return form, coeffs
     
@@ -148,4 +150,4 @@ class BOGAT:
             # rfopt.plot_sta()
             coeffs.append(rfopt.coeff)
             m_stas.append(rfopt.m_sta)
-        return cost, coeffs, m_stas
+        return -cost, coeffs, m_stas

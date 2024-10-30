@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from yaptxd.spokes import SpokesForm
 from yaptxd.maps import FieldMapFlattened
 from yaptxd.utils import GAMMA
+from typing import Union
 
 
 class StaOpt:
@@ -18,10 +19,15 @@ class StaOpt:
 
     def __init__(self, pulse_form: SpokesForm, 
                  field_maps: FieldMapFlattened,
-                 target: float = 0.5):
+                 target: Union[float, np.ndarray] = 0.5):
         self.pulse_form = pulse_form
         self.maps = field_maps
-        self.target = target * np.ones_like(self.maps.b0) # M
+        if not isinstance(target, np.ndarray):
+            self.target = target * np.ones_like(self.maps.b0)
+        elif not np.alltrue(target.shape == self.maps.b0.shape):
+            raise ValueError("target shape does not match b0 shape")
+        else:
+            self.target = target
         self.a_mat = None
         self._coeff = None
         self.cost = 0.
