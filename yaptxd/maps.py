@@ -122,21 +122,22 @@ class FieldMap:
 class FieldMapFlattened:
 
     def __init__(self, from_map: FieldMap = None,
-                 slices: np.ndarray = None):
+                 slices: np.ndarray = None,
+                 use_z: bool = False):
         self.b0 = None
         self.b1 = None
         self.xyz_mesh = None
         self.mask = None
         self.coils = 1
         self.subsample_factor = 1.0
+        self.use_z = use_z
 
         if from_map is not None:
             self.import_slices(from_map, slices)
 
 
     def import_slices(self, from_map: FieldMap, 
-                      slices: np.ndarray = None,
-                      use_z: bool = True):
+                      slices: np.ndarray = None):
         """
         Import slices from another map, combine slices and flatten.
         """
@@ -148,7 +149,7 @@ class FieldMapFlattened:
         self.mask = from_map.mask[:,:,slices]
         self.coils = from_map.coils
 
-        z = from_map.z[slices] if use_z else np.zeros_like(slices)
+        z = from_map.z[slices] if self.use_z else np.zeros_like(slices)
 
         self.xyz_mesh = np.meshgrid(from_map.x, from_map.y, z, indexing='xy')
 

@@ -29,7 +29,7 @@ class StaOpt:
         else:
             self.target = target
         self.a_mat = None
-        self._coeff = None
+        self._coeff = None # flattened from (nPulse, nCoils)
         self.cost = 0.
         self.m_sta = None
 
@@ -91,8 +91,8 @@ class StaOpt:
         curr_phase = np.zeros_like(self.target, dtype=complex)
         for i in range(niter):
             astack = np.vstack((self.a_mat.T, tikhonov*np.eye(self.a_mat.shape[0])))
-            bstack = np.append((self.target*np.exp(1j*curr_phase)),
-                               np.zeros(self.a_mat.shape[0]))
+            bstack = np.append((np.abs(self.target)*np.exp(1j*curr_phase)),
+                                np.zeros(self.a_mat.shape[0]))
             x = np.linalg.lstsq(astack, bstack, rcond=None)
             curr_phase = np.angle(np.matmul(self.a_mat.T, x[0]))
         
@@ -118,7 +118,7 @@ class StaOpt:
         return cost
 
 
-    def plot_sta(self):
+    def plot_sta(self, slice: int = -1):
         """
         Plotting small tip angle magnetization
         """
@@ -128,18 +128,21 @@ class StaOpt:
         target = np.zeros_like(self.maps.mask, dtype=complex)
         target[self.maps.mask] = self.target
 
+        if slice == -1:
+            slice = self.maps.mask.shape[2] // 2
+
         fig, ax = plt.subplots(1,3)
-        im1 = ax[0].imshow(np.abs(target), cmap='hot')
+        im1 = ax[0].imshow(np.abs(target)[:,:,slice], cmap='hot')
         im1.set_clim(0, 1)
         plt.colorbar(im1, ax=ax[0])
         ax[0].set_title('Target magnetization')
 
-        im2 = ax[1].imshow(np.abs(sta_mag), cmap='hot')
+        im2 = ax[1].imshow(np.abs(sta_mag)[:,:,slice], cmap='hot')
         im2.set_clim(0, 1)
         plt.colorbar(im2, ax=ax[1])
         ax[1].set_title('STA magnetization')
 
-        im3 = ax[2].imshow(np.angle(sta_mag), cmap='hsv', vmin=-np.pi, vmax=np.pi)
+        im3 = ax[2].imshow(np.angle(sta_mag)[:,:,slice], cmap='hsv', vmin=-np.pi, vmax=np.pi)
         plt.colorbar(im3, ax=ax[2])
         ax[2].set_title('STA phase')
         plt.show()
