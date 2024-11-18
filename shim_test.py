@@ -1,4 +1,4 @@
-import yaptxd.static_shim
+
 from yaptxd.maps import FieldMap
 from yaptxd.utils import sinc_pulse
 from yaptxd import static_shim
