@@ -8,11 +8,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from yaptxd.spokes import SpokesForm
 from yaptxd.maps import FieldMapFlattened
+from yaptxd.opt_base import OptBase
 from yaptxd.utils import GAMMA
 from typing import Union
 
 
-class StaOpt:
+class StaOpt(OptBase):
     """
     Class for small tip approximation pulse optimization
     """
@@ -20,18 +21,10 @@ class StaOpt:
     def __init__(self, pulse_form: SpokesForm, 
                  field_maps: FieldMapFlattened,
                  target: Union[float, np.ndarray] = 0.5):
+        
+        super().__init__(field_maps, target)
         self.pulse_form = pulse_form
-        self.maps = field_maps
-        if not isinstance(target, np.ndarray):
-            self.target = target * np.ones_like(self.maps.b0)
-        elif not np.alltrue(target.shape == self.maps.b0.shape):
-            raise ValueError("target shape does not match b0 shape")
-        else:
-            self.target = target
         self.a_mat = None
-        self._coeff = None # flattened from (nPulse, nCoils)
-        self.cost = 0.
-        self.m_sta = None
 
     def create_A_matrix(self):
         """
@@ -98,7 +91,7 @@ class StaOpt:
         
         self.coeff = x[0]
         self.cost = self.mls_cost(self.a_mat, x[0], self.target, tikhonov)
-        self.m_sta = np.matmul(self.a_mat.T, self.coeff)
+        self.est_fa = np.matmul(self.a_mat.T, self.coeff)
         return self.coeff
     
     @staticmethod
@@ -123,7 +116,7 @@ class StaOpt:
         Plotting small tip angle magnetization
         """
         sta_mag = np.zeros_like(self.maps.mask, dtype=complex)
-        sta_mag[self.maps.mask] = self.m_sta
+        sta_mag[self.maps.mask] = self.est_fa
 
         target = np.zeros_like(self.maps.mask, dtype=complex)
         target[self.maps.mask] = self.target
@@ -150,9 +143,10 @@ class StaOpt:
     
     @property
     def coeff(self):
-        return self._coeff
+        return super().coeff
+    
     @coeff.setter
     def coeff(self, value):
         self._coeff = value
         if self.a_mat is not None:
-            self.m_sta = np.matmul(self.a_mat.T, self.coeff)
+            self.est_fa = np.matmul(self.a_mat.T, self.coeff)
