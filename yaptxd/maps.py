@@ -156,7 +156,7 @@ class FieldMapFlattened:
         # flatten
         self.b0 = self.b0[self.mask]
         self.b1 = self.b1[:, self.mask]
-        self.xyz_mesh = [x[self.mask] for x in self.xyz_mesh]
+        self.xyz_mesh = np.array([x[self.mask] for x in self.xyz_mesh])
 
 
     def subsample(self, factor: float = 1.0, method: str = 'uniform'):

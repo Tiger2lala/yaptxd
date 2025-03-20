@@ -116,3 +116,15 @@ class SpokesForm:
         self.k = self.k[::-1,...]
         return self.k
     
+
+    def gen_rf(self, coeff: np.ndarray):
+        """
+        Generate RF pulse form given coefficients
+        :param coeff: (nPulse, nCoil) coefficients for each subpulse
+        """
+        rf = np.zeros([self.rf.size, coeff.shape[1]], dtype=complex)
+        for isub in range(self.subpulse_start_time.size):
+            rf[self.subpulse_start_time[isub]:self.subpulse_start_time[isub]+self.subpulse_len, :] = \
+                coeff[isub,:] * self.rf[self.subpulse_start_time[isub]:self.subpulse_start_time[isub]+self.subpulse_len, np.newaxis]
+        
+        return rf
