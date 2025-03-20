@@ -37,6 +37,7 @@ class LtaOpt(OptBase):
         """
         Optimization routine using bloch simulation and ipopt
         """
+        # optimizer usually only takes real values
         coeff = np.concatenate([np.real(self.coeff), np.imag(self.coeff)])
 
         # optimization
@@ -50,12 +51,16 @@ class LtaOpt(OptBase):
         """
         Cost function for bloch simulation
         """
+        # return to complex
         coeff = coeff[:coeff.size//2] + 1j * coeff[coeff.size//2:]
-        rcoeff = coeff.reshape(-1, self.maps.coils)
-        rf = self.pulse_form.gen_rf(rcoeff)
-        b1_to_sim = rf @ self.maps.b1
+        rcoeff = coeff.reshape(-1, self.maps.coils) # (nPulse, nCoil)
+        rf = self.pulse_form.gen_rf(rcoeff) # (nT, ncoil)
+        b1_to_sim = rf @ self.maps.b1 # (nT, nVoxel)
         faout = bloch_eval(b1_to_sim, self.pulse_form.g, self.pulse_form.timestep, 
                            self.maps.b0, self.maps.xyz_mesh)
+        # faout is (nVoxel) of complex flip angle
+
+        # regularised magnitude cost
         return np.linalg.norm(np.abs(faout) - np.abs(self.target))**2 + \
             self.tikhonov * np.linalg.norm(coeff)**2
     
